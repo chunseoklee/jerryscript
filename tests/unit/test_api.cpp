@@ -374,7 +374,6 @@ main (void)
 
   jerry_api_release_value (&res);
 
-
   // Test: Throwing exception from native handler.
   throw_test_handler_p = jerry_api_create_external_function (handler_throw_test);
   assert (throw_test_handler_p != NULL
@@ -401,9 +400,29 @@ main (void)
   jerry_api_release_value (&res);
 
 
-  // cleanup.
-  jerry_api_release_object (global_obj_p);
+  const char *eval_code_src_p = "(function () { return 123; })";
+  jerry_completion_code_t status = jerry_api_eval (eval_code_src_p,
+                                                   strlen (eval_code_src_p),
+                                                   false,
+                                                   true,
+                                                   &val_t);
+  assert (status == JERRY_COMPLETION_CODE_OK);
+  assert (val_t.type == JERRY_API_DATA_TYPE_OBJECT);
+  assert (jerry_api_is_function (val_t.v_object));
 
+  is_ok = jerry_api_call_function (val_t.v_object,
+                                   NULL,
+                                   &res,
+                                   NULL, 0);
+  assert (is_ok);
+  assert (res.type == JERRY_API_DATA_TYPE_FLOAT64
+                && res.v_float64 == 123.0);
+  jerry_api_release_value (&res);
+
+  jerry_api_release_value (&val_t);
+
+
+  jerry_api_release_object (global_obj_p);
   jerry_cleanup ();
 
   assert (test_api_is_free_callback_was_called);
