@@ -43,6 +43,9 @@ extern "C"
 // Maximum number of elements in a type-one record
 #define test_max_type_one_record_elements 64
 
+// Element size in a type-one record
+#define test_element_size_type_one_record (sizeof (uint16_t))
+
 class test_rcs_record_type_one_t : public rcs_record_t
 {
   public:
@@ -82,7 +85,7 @@ class test_rcs_record_type_one_t : public rcs_record_t
     static const uint32_t prev_field_width = rcs_cpointer_t::bit_field_width;
 
     static const size_t header_size = 2 * RCS_DYN_STORAGE_LENGTH_UNIT;
-    static const size_t element_size = sizeof (uint16_t);
+    static const size_t element_size = test_element_size_type_one_record;
 };
 
 class test_rcs_record_type_two_t : public rcs_record_t

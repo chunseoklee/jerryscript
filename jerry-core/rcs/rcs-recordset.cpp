@@ -649,6 +649,23 @@ rcs_recordset_t::assert_state_is_correct (void)
 #endif /* !JERRY_NDEBUG */
 } /* rcs_recordset_t::assert_state_is_correct */
 
+
+rcs_record_iterator_t::rcs_record_iterator_t (rcs_recordset_t *rcs_p, rcs_record_t* rec_p)
+{
+  _record_start_p = rec_p;
+  _current_pos_p = (uint8_t *)_record_start_p;
+
+  _recordset_p = rcs_p;
+}
+
+rcs_record_iterator_t::rcs_record_iterator_t (rcs_recordset_t *rcs_p, rcs_cpointer_t rec_ext_cp)
+{
+  _record_start_p = rcs_cpointer_t::decompress (rec_ext_cp);
+  _current_pos_p = (uint8_t *)_record_start_p;
+
+  _recordset_p = rcs_p;
+}
+
 /**
  * Get size of the free record
  */
