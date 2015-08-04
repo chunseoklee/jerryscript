@@ -24,6 +24,7 @@
 #include "ecma-helpers.h"
 #include "ecma-init-finalize.h"
 #include "ecma-objects.h"
+#include "ecma-array-object.h"
 #include "ecma-objects-general.h"
 #include "lit-magic-strings.h"
 #include "parser.h"
@@ -428,6 +429,85 @@ jerry_api_create_object (void)
 
   return ecma_op_create_object_object_noarg ();
 } /* jerry_api_create_object */
+
+/**
+ * Create an array object
+ *
+ * Note:
+ *      caller should release the object with jerry_api_release_object, just when the value becomes unnecessary.
+ *
+ * @return pointer to created array object
+ */
+jerry_api_object_t*
+jerry_api_create_array_object (jerry_api_size_t size)
+{
+  jerry_api_size_t length = size;
+
+#ifndef CONFIG_ECMA_COMPACT_PROFILE_DISABLE_ARRAY_BUILTIN
+  ecma_object_t *array_prototype_obj_p = ecma_builtin_get (ECMA_BUILTIN_ID_ARRAY_PROTOTYPE);
+#else /* !CONFIG_ECMA_COMPACT_PROFILE_DISABLE_ARRAY_BUILTIN */
+  ecma_object_t *array_prototype_obj_p = ecma_builtin_get (ECMA_BUILTIN_ID_OBJECT_PROTOTYPE);
+#endif /* CONFIG_ECMA_COMPACT_PROFILE_DISABLE_ARRAY_BUILTIN */
+
+  ecma_object_t *obj_p = ecma_create_object (array_prototype_obj_p, true, ECMA_OBJECT_TYPE_ARRAY);
+  ecma_deref_object (array_prototype_obj_p);
+
+  ecma_string_t *length_magic_string_p = ecma_get_magic_string (LIT_MAGIC_STRING_LENGTH);
+  ecma_number_t *length_num_p = ecma_alloc_number ();
+  *length_num_p = ecma_uint32_to_number (length);
+
+  ecma_property_t *length_prop_p = ecma_create_named_data_property (obj_p,
+                                                                    length_magic_string_p,
+                                                                    true, false, false);
+  ecma_set_named_data_property_value (length_prop_p, ecma_make_number_value (length_num_p));
+
+  ecma_deref_ecma_string (length_magic_string_p);
+
+  return obj_p;
+
+} /* jerry_api_create_array */
+
+
+/**
+ * Set value of field in the specified array object
+ *
+ * @return true, if field value was set successfully
+ *         false - otherwise.
+ */
+bool jerry_api_set_array_index_value (jerry_api_object_t *array_obj_p,
+                                      jerry_api_length_t index,
+                                      jerry_api_value_t *value_p)
+{
+  ecma_number_t index_n = ecma_uint32_to_number (index);
+  lit_utf8_byte_t str[64];
+  ecma_number_to_utf8_string (index_n, str, sizeof (str));
+
+  return jerry_api_set_object_field_value (array_obj_p, str, value_p);
+} /* jerry_api_set_array_value */
+
+/**
+ * Get value of field in the specified array object
+ *
+ * Note:
+ *      if value was retrieved successfully, it should be freed
+ *      with jerry_api_release_value just when it becomes unnecessary.
+ *
+ * @return true, if field value was retrieved successfully, i.e. upon the call:
+ *                - there is field with specified name in the object;
+ *         false - otherwise.
+ */
+bool jerry_api_get_array_index_value (jerry_api_object_t *array_obj_p,
+                                      jerry_api_length_t index,
+                                      jerry_api_value_t *value_p) /* output to put value */
+{
+  ecma_number_t index_n = ecma_uint32_to_number (index);
+  lit_utf8_byte_t str[64];
+  ecma_number_to_utf8_string (index_n, str, sizeof (str));
+
+  return jerry_api_get_object_field_value (array_obj_p, str, value_p);
+
+} /* jerry_api_get_array_value */
+
 
 /**
  * Create an error object
